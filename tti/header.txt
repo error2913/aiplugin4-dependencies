@@ -1,0 +1,10 @@
+// ==UserScript==
+// @name         生成图片
+// @description  通过文字描述生成图片，TOML 多模型配置，支持同步返回与异步任务轮询。
+// @version      2.0.0
+// @author       白鱼、错误
+// @timestamp    2026-08-12
+// @license      MIT
+// @homepageURL  https://github.com/error2913/aiplugin4-dependencies/
+// @updateUrl    https://raw.githubusercontent.com/error2913/aiplugin4-dependencies/main/tti/dist/tti.js
+// ==/UserScript==

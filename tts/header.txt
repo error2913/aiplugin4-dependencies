@@ -1,0 +1,10 @@
+// ==UserScript==
+// @name         生成音频
+// @description  通过文字合成音频，TOML 多模型配置，兼容二进制、URL、base64 与 hex 返回格式。
+// @version      2.0.0
+// @author       白鱼、错误
+// @timestamp    2026-08-12
+// @license      MIT
+// @homepageURL  https://github.com/error2913/aiplugin4-dependencies/
+// @updateUrl    https://raw.githubusercontent.com/error2913/aiplugin4-dependencies/main/tts/dist/tts.js
+// ==/UserScript==

@@ -54,6 +54,32 @@ success_values = ["SUCCEEDED", "SUCCESS"]
 failure_values = ["FAILED"]
 ```
 
+## qwen-image-3.0-pro（阿里云百炼，同步返回）
+
+```toml
+name = "qwen-image-3.0-pro"
+provider = "dashscope"
+api_key = "sk-xxx"
+base_url = "https://dashscope.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation"
+
+[body]
+model = "qwen-image-3.0-pro"
+
+[body.input]
+messages = [{ role = "user", content = [{ text = "{prompt}" }] }]
+
+[body.parameters]
+prompt_extend = true
+negative_prompt = "{negative_prompt}"
+size = "1024*1024"
+n = 1
+
+[response]
+data_path = "output.choices.0.message.content.0.image"
+```
+
+使用标准版 `qwen-image-3.0` 时，把 `name` 和 `[body]` 里的 `model` 一起改成 `qwen-image-3.0` 即可。使用阿里云百炼业务空间专属域名时，将 `base_url` 中的 `dashscope.aliyuncs.com` 替换为 `{WorkspaceId}.cn-beijing.maas.aliyuncs.com`，并把 `{WorkspaceId}` 换成控制台中的真实业务空间 ID，例如 `https://{WorkspaceId}.cn-beijing.maas.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation`。
+
 ## black-forest-labs/FLUX.1-schnell（硅基流动）
 
 ```toml

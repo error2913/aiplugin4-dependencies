@@ -118,7 +118,7 @@ error_message_path = "message"
 
 生成音频：
 
-- OpenAI / OpenAI 兼容：`gpt-4o-mini-tts`
+- OpenAI / OpenAI 兼容：`gpt-4o-mini-tts`（裸音频，需经代理转 base64）
 - 硅基流动：`fnlp/MOSS-TTSD-v0.5`、`FunAudioLLM/CosyVoice2-0.5B`、`fishaudio/fish-speech-1.5`
 - Fish Audio：`fishaudio-s21pro-flash`（v3 同步接口，`voice_id` 指定音色）
 - ElevenLabs：`eleven-multilingual-v2`（`xi-api-key` 鉴权，`voice_id` 在 URL 路径）
@@ -130,7 +130,7 @@ error_message_path = "message"
 
 完整预设清单与各模型请求差异见各插件 README。
 
-默认配置只保留一个经典模型（tti：`gpt-image-1`，tts：`gpt-4o-mini-tts`），其余模型示例见 [tti/MODELS.md](tti/MODELS.md) 与 [tts/MODELS.md](tts/MODELS.md)。
+默认配置只保留一个经典模型（tti：`gpt-image-1`，tts：`google-cloud-tts`），其余模型示例见 [tti/MODELS.md](tti/MODELS.md) 与 [tts/MODELS.md](tts/MODELS.md)。
 
 ## 暴露 API
 

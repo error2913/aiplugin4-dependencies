@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         生成音频
-// @description  通过文字合成音频，TOML 多模型配置，兼容二进制、URL、base64 与 hex 返回格式。
+// @description  通过文字合成音频，TOML 多模型配置，支持 URL、base64 与 hex 返回格式。
 // @version      2.0.0
 // @author       白鱼、错误
 // @timestamp    2026-08-12
@@ -14766,31 +14766,52 @@ ${text}\r
   function isHexString(value) {
     return /^[0-9a-f]+$/i.test(value) && value.length % 2 === 0 && value.length >= 16;
   }
+  var BASE64_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
   function hexToBase64(hex) {
     const clean = hex.replace(/\s+/g, "");
     if (clean.length % 2 !== 0) throw new Error("十六进制数据长度不合法");
-    let binary = "";
-    for (let i = 0; i < clean.length; i += 2) {
-      binary += String.fromCharCode(parseInt(clean.slice(i, i + 2), 16));
+    const bytes = new Uint8Array(clean.length / 2);
+    for (let i = 0; i < bytes.length; i++) {
+      bytes[i] = parseInt(clean.slice(i * 2, i * 2 + 2), 16);
     }
-    return btoa(binary);
+    let result = "";
+    for (let i = 0; i < bytes.length; i += 3) {
+      const a2 = bytes[i];
+      const b2 = i + 1 < bytes.length ? bytes[i + 1] : 0;
+      const c2 = i + 2 < bytes.length ? bytes[i + 2] : 0;
+      result += BASE64_CHARS[a2 >> 2];
+      result += BASE64_CHARS[(a2 & 3) << 4 | b2 >> 4];
+      result += i + 1 < bytes.length ? BASE64_CHARS[(b2 & 15) << 2 | c2 >> 6] : "=";
+      result += i + 2 < bytes.length ? BASE64_CHARS[c2 & 63] : "=";
+    }
+    return result;
   }
 
   // src/models.ts
   var CONFIG_KEY = "生成语音模型";
   var PRESET_MODELS = [
     `# 生成音频模型，使用 TOML 格式。默认只保留一个经典模型，其他示例见 MODELS.md。
-name = "gpt-4o-mini-tts"
-provider = "openai"
-api_key = "sk-xxx"
-base_url = "https://api.openai.com/v1/audio/speech"
+name = "google-cloud-tts"
+provider = "google-cloud"
+api_key = "your-api-key"
+base_url = "https://texttospeech.googleapis.com/v1beta1/text:synthesize"
+
+[request]
+auth_header_name = "x-goog-api-key"
 
 [body]
-model = "gpt-4o-mini-tts"
-input = "{text}"
-voice = "alloy"
-response_format = "mp3"
-speed = 1.0`
+input = { text = "{text}" }
+
+[body.voice]
+languageCode = "zh-CN"
+name = "zh-CN-Chirp3-HD-Aoqi"
+
+[body.audioConfig]
+audioEncoding = "MP3"
+
+[response]
+data_path = "audioContent"
+data_type = "base64"`
   ];
   function asString(value) {
     return typeof value === "string" ? value : "";
@@ -15076,16 +15097,22 @@ speed = 1.0`
       throw new Error(`接口返回错误：${data.error.message || JSON.stringify(data.error)}`);
     }
   }
-  function audioDataFromText(bodyText, model) {
-    const isJson = /^\s*[\[{]/.test(bodyText);
+  function audioDataFromBody(body, model) {
+    const isJson = /^\s*[\[{]/.test(body);
     if (isJson) {
-      const data = parseJson(bodyText);
+      const data = parseJson(body);
       checkJsonError(data, model);
       const audio = extractAudioData(data, model);
       if (audio) return audio;
       throw new Error("JSON 响应中未找到音频数据");
     }
-    return btoa(bodyText);
+    const trimmed = body.trim();
+    if (trimmed && /^[A-Za-z0-9+/=]+$/.test(trimmed)) {
+      return trimmed;
+    }
+    throw new Error(
+      "接口返回的不是 base64 音频，请改用返回 base64/URL 的音频接口，或加一层转换服务"
+    );
   }
   async function generateSpeech(text, modelName = "") {
     if (!text.trim()) throw new Error("要合成的文本不能为空");
@@ -15105,7 +15132,7 @@ speed = 1.0`
       }),
       timeoutMs
     );
-    return audioDataFromText(bodyText, model);
+    return audioDataFromBody(bodyText, model);
   }
 
   // src/api.ts

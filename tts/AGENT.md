@@ -54,7 +54,7 @@ generate(text, modelName)
   -> getAccessToken()    可选 auth_url 换 token（带缓存）
   -> 构造 URL / headers / body（占位符替换）
   -> 发起请求
-  -> 二进制响应直接转 base64，JSON 响应按 [response] 解析
+  -> JSON 响应按 [response] 解析 URL / base64 / hex；裸音频接口不支持
 ```
 
 `models.ts` 的 `parseModel` 负责把 TOML 转成 `ModelItem`；解析失败会打印日志并跳过该行，不影响其他模型。
@@ -71,7 +71,7 @@ generate(text, modelName)
 
 ### 默认配置
 
-- `PRESET_MODELS` 只保留一个经典模型 `gpt-4o-mini-tts`，避免插件设置页模板过长。
+- `PRESET_MODELS` 只保留一个经典模型 `google-cloud-tts`，避免插件设置页模板过长。
 - 其他服务商示例统一放在 `MODELS.md`，用户按需复制到配置中。
 
 ### 对外 API
@@ -114,9 +114,9 @@ interface GenerateResult {
 
 ## 新增模型流程
 
-1. 阅读官方 API 文档，确认端点、鉴权方式、请求字段与响应格式（二进制、JSON、URL、base64 或 hex）。
+1. 阅读官方 API 文档，确认端点、鉴权方式、请求字段与响应格式（JSON、URL、base64 或 hex）。
 2. 将完整 TOML 追加到 `MODELS.md`，注释写明服务商与特点；只有明确要求修改默认配置时才改 `PRESET_MODELS`，且默认仍保持单一经典模型。
-3. 尽量显式配置 `[response] data_path` 与 `data_type`；二进制返回无需 `[response]`。
+3. 尽量显式配置 `[response] data_path` 与 `data_type`；海豹 gojax 会把响应体按 UTF-8 解码，返回裸音频的接口无法直接使用，需要经代理转 base64。
 4. 自定义鉴权头用 `auth_header_name`；需要换 token 的服务商使用 `auth_url` + `api_key` / `api_secret`。
 5. 同步更新 `README.md` 的预设清单，并在 `CHANGELOG.md` 记录面向用户的变更。
 6. 运行 `npm run typecheck` 与 `npm run build` 验证。

@@ -220,17 +220,23 @@ function checkJsonError(data: any, model: ModelItem): void {
   }
 }
 
-function audioDataFromText(bodyText: string, model: ModelItem): string {
-  // 按响应体判断：二进制音频不会以 { 或 [ 开头，JSON 错误/JSON 音频才会
-  const isJson = /^\s*[\[{]/.test(bodyText);
+function audioDataFromBody(body: string, model: ModelItem): string {
+  // 二进制响应会在 gojax 转 JS 字符串时被 UTF-8 解码破坏，只能接收 base64 或 URL
+  const isJson = /^\s*[\[{]/.test(body);
   if (isJson) {
-    const data = parseJson<any>(bodyText);
+    const data = parseJson<any>(body);
     checkJsonError(data, model);
     const audio = extractAudioData(data, model);
     if (audio) return audio;
     throw new Error("JSON 响应中未找到音频数据");
   }
-  return btoa(bodyText);
+  const trimmed = body.trim();
+  if (trimmed && /^[A-Za-z0-9+/=]+$/.test(trimmed)) {
+    return trimmed;
+  }
+  throw new Error(
+    "接口返回的不是 base64 音频，请改用返回 base64/URL 的音频接口，或加一层转换服务"
+  );
 }
 
 export async function generateSpeech(text: string, modelName = ""): Promise<string> {
@@ -252,5 +258,5 @@ export async function generateSpeech(text: string, modelName = ""): Promise<stri
     }),
     timeoutMs
   );
-  return audioDataFromText(bodyText, model);
+  return audioDataFromBody(bodyText, model);
 }

@@ -4,6 +4,11 @@
 
 ## [2.0.0] - 2026-08-12
 
+### 修复
+
+- 补齐 `x-www-form-urlencoded` 表单请求体编码，与 tts 保持一致；此前配置 `form = true` 时仍发送 JSON。
+- 修正 `hexToBase64`：海豹 `btoa` 会把 JS 字符串按 UTF-8 编码，原实现对大于 127 的字节会编错，现改为逐字节自行编码 base64。
+
 ### 新增
 
 - TypeScript 工程化重写，源码位于 `src/`，esbuild 构建为单文件 `dist/tti.js`。

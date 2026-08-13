@@ -14772,14 +14772,25 @@ ${text}\r
   function isHexString(value) {
     return /^[0-9a-f]+$/i.test(value) && value.length % 2 === 0 && value.length >= 16;
   }
+  var BASE64_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
   function hexToBase64(hex) {
     const clean = hex.replace(/\s+/g, "");
     if (clean.length % 2 !== 0) throw new Error("十六进制数据长度不合法");
-    let binary = "";
-    for (let i = 0; i < clean.length; i += 2) {
-      binary += String.fromCharCode(parseInt(clean.slice(i, i + 2), 16));
+    const bytes = new Uint8Array(clean.length / 2);
+    for (let i = 0; i < bytes.length; i++) {
+      bytes[i] = parseInt(clean.slice(i * 2, i * 2 + 2), 16);
     }
-    return btoa(binary);
+    let result = "";
+    for (let i = 0; i < bytes.length; i += 3) {
+      const a2 = bytes[i];
+      const b2 = i + 1 < bytes.length ? bytes[i + 1] : 0;
+      const c2 = i + 2 < bytes.length ? bytes[i + 2] : 0;
+      result += BASE64_CHARS[a2 >> 2];
+      result += BASE64_CHARS[(a2 & 3) << 4 | b2 >> 4];
+      result += i + 1 < bytes.length ? BASE64_CHARS[(b2 & 15) << 2 | c2 >> 6] : "=";
+      result += i + 2 < bytes.length ? BASE64_CHARS[c2 & 63] : "=";
+    }
+    return result;
   }
 
   // src/models.ts
@@ -15001,16 +15012,29 @@ data_path = "data.0.b64_json"`
     return headers;
   }
   function buildBody(model, placeholders) {
+    const replaced = deepReplacePlaceholders(model.body, placeholders);
     const contentType = model.request.contentType || "application/json";
     if (/multipart\/form-data/i.test(contentType)) {
       const boundary = `seal-${Date.now().toString(36)}`;
-      const values = deepReplacePlaceholders(model.body, placeholders);
       return {
-        body: encodeMultipart(values, boundary),
+        body: encodeMultipart(replaced, boundary),
         contentType: `multipart/form-data; boundary=${boundary}`
       };
     }
-    return { body: JSON.stringify(deepReplacePlaceholders(model.body, placeholders)) };
+    const isForm = model.request.form || /x-www-form-urlencoded/i.test(contentType);
+    if (isForm) {
+      const parts = [];
+      for (const key of Object.keys(replaced)) {
+        const value = replaced[key];
+        if (Array.isArray(value) || value && typeof value === "object") {
+          parts.push(`${key}=${encodeURIComponent(JSON.stringify(value))}`);
+        } else {
+          parts.push(`${key}=${encodeURIComponent(String(value != null ? value : ""))}`);
+        }
+      }
+      return { body: parts.join("&") };
+    }
+    return { body: JSON.stringify(replaced) };
   }
   function normalizeImageData(value, dataType) {
     if (typeof value !== "string" || !value.trim()) return null;

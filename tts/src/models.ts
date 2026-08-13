@@ -8,17 +8,27 @@ export const CONFIG_KEY = "生成语音模型";
 
 export const PRESET_MODELS: string[] = [
   `# 生成音频模型，使用 TOML 格式。默认只保留一个经典模型，其他示例见 MODELS.md。
-name = "gpt-4o-mini-tts"
-provider = "openai"
-api_key = "sk-xxx"
-base_url = "https://api.openai.com/v1/audio/speech"
+name = "google-cloud-tts"
+provider = "google-cloud"
+api_key = "your-api-key"
+base_url = "https://texttospeech.googleapis.com/v1beta1/text:synthesize"
+
+[request]
+auth_header_name = "x-goog-api-key"
 
 [body]
-model = "gpt-4o-mini-tts"
-input = "{text}"
-voice = "alloy"
-response_format = "mp3"
-speed = 1.0`
+input = { text = "{text}" }
+
+[body.voice]
+languageCode = "zh-CN"
+name = "zh-CN-Chirp3-HD-Aoqi"
+
+[body.audioConfig]
+audioEncoding = "MP3"
+
+[response]
+data_path = "audioContent"
+data_type = "base64"`
 ];
 
 function asString(value: unknown): string {

@@ -109,16 +109,30 @@ function buildBody(
   model: ModelItem,
   placeholders: Record<string, string>
 ): { body: string; contentType?: string } {
+  const replaced = deepReplacePlaceholders(model.body, placeholders) as Record<string, unknown>;
   const contentType = model.request.contentType || "application/json";
   if (/multipart\/form-data/i.test(contentType)) {
     const boundary = `seal-${Date.now().toString(36)}`;
-    const values = deepReplacePlaceholders(model.body, placeholders) as Record<string, unknown>;
     return {
-      body: encodeMultipart(values, boundary),
+      body: encodeMultipart(replaced, boundary),
       contentType: `multipart/form-data; boundary=${boundary}`
     };
   }
-  return { body: JSON.stringify(deepReplacePlaceholders(model.body, placeholders)) };
+  const isForm =
+    model.request.form || /x-www-form-urlencoded/i.test(contentType);
+  if (isForm) {
+    const parts: string[] = [];
+    for (const key of Object.keys(replaced)) {
+      const value = replaced[key];
+      if (Array.isArray(value) || (value && typeof value === "object")) {
+        parts.push(`${key}=${encodeURIComponent(JSON.stringify(value))}`);
+      } else {
+        parts.push(`${key}=${encodeURIComponent(String(value ?? ""))}`);
+      }
+    }
+    return { body: parts.join("&") };
+  }
+  return { body: JSON.stringify(replaced) };
 }
 
 function normalizeImageData(value: unknown, dataType: string): string | null {

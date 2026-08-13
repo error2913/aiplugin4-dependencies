@@ -124,12 +124,24 @@ export function isHexString(value: string): boolean {
   return /^[0-9a-f]+$/i.test(value) && value.length % 2 === 0 && value.length >= 16;
 }
 
+const BASE64_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+
 export function hexToBase64(hex: string): string {
   const clean = hex.replace(/\s+/g, "");
   if (clean.length % 2 !== 0) throw new Error("十六进制数据长度不合法");
-  let binary = "";
-  for (let i = 0; i < clean.length; i += 2) {
-    binary += String.fromCharCode(parseInt(clean.slice(i, i + 2), 16));
+  const bytes = new Uint8Array(clean.length / 2);
+  for (let i = 0; i < bytes.length; i++) {
+    bytes[i] = parseInt(clean.slice(i * 2, i * 2 + 2), 16);
   }
-  return btoa(binary);
+  let result = "";
+  for (let i = 0; i < bytes.length; i += 3) {
+    const a = bytes[i];
+    const b = i + 1 < bytes.length ? bytes[i + 1] : 0;
+    const c = i + 2 < bytes.length ? bytes[i + 2] : 0;
+    result += BASE64_CHARS[a >> 2];
+    result += BASE64_CHARS[((a & 3) << 4) | (b >> 4)];
+    result += i + 1 < bytes.length ? BASE64_CHARS[((b & 15) << 2) | (c >> 6)] : "=";
+    result += i + 2 < bytes.length ? BASE64_CHARS[c & 63] : "=";
+  }
+  return result;
 }

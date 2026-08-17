@@ -2,6 +2,7 @@ export interface GenerateRequest {
   text: string;
   negativeText?: string;
   model?: string;
+  image?: string;
 }
 
 export interface GenerateResult {

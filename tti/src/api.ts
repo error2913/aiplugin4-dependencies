@@ -14,7 +14,8 @@ export function registerApi(): void {
         const data = await sendImageRequest(
           request.text,
           request.negativeText || "",
-          request.model || ""
+          request.model || "",
+          request.image || ""
         );
         return { success: true, type: "image", data };
       } catch (e) {

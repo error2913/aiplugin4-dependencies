@@ -2,6 +2,8 @@
 
 插件默认只内置经典模型 `gpt-image-1`。需要其他服务商时，从本文档复制完整 TOML，粘贴到 SealDice →「生成图片模型」配置中，替换 `api_key` 等示例值即可。
 
+以图生图时，把参考图占位符写入请求体即可：`{image}` 表示原始传入值，`{image_url}` 表示 URL / data URL，`{image_base64}` 表示去掉 data 前缀后的 base64。
+
 ## cogview-3-flash（智谱）
 
 ```toml
@@ -131,6 +133,27 @@ task_status_path = "data.task_status"
 data_path = "data.sub_task_result_list.0.final_image_list.0.img_url"
 success_values = ["SUCCESS"]
 failure_values = ["FAILED"]
+```
+
+## stable-diffusion-webui-img2img（本地，以图生图）
+
+```toml
+name = "stable-diffusion-webui-img2img"
+provider = "custom"
+api_key = ""
+base_url = "http://127.0.0.1:7860/sdapi/v1/img2img"
+
+[body]
+init_images = ["{image_base64}"]
+prompt = "{prompt}"
+negative_prompt = "{negative_prompt}"
+steps = 25
+width = 768
+height = 768
+batch_size = 1
+
+[response]
+data_path = "images.0"
 ```
 
 ## stable-diffusion-webui（本地，无鉴权）

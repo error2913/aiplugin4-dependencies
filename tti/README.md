@@ -62,7 +62,7 @@ failure_values = ["FAILED"]
 error_message_path = "message"
 ```
 
-可用占位符：`{prompt}`、`{negative_prompt}`、`{model}`、`{voice_id}`、`{api_key}`、`{api_secret}`、`{access_token}`，可用于 URL、请求头和请求体。`multipart/form-data` 自动带 boundary 提交。
+可用占位符：`{prompt}`、`{negative_prompt}`、`{model}`、`{voice_id}`、`{api_key}`、`{api_secret}`、`{access_token}`，以及以图生图用的 `{image}`、`{image_url}`、`{image_base64}`，可用于 URL、请求头和请求体。`multipart/form-data` 自动带 boundary 提交。
 
 接口同步返回图片时直接使用响应中的 URL / base64；配置 `request.poll_url` 且响应包含任务 ID 时，自动按 `task_status_path` 轮询任务状态，支持 GET 与 POST 轮询。`{task_id}` 会替换到轮询 URL 与 `poll_body` 中。
 
@@ -104,6 +104,7 @@ interface GenerateRequest {
   text: string;
   negativeText?: string; // 负向提示词，可选
   model?: string;        // 可选，不传时使用配置列表第一项
+  image?: string;        // 可选，参考图：URL、data URL 或 base64
 }
 
 interface GenerateResult {
@@ -115,7 +116,8 @@ interface GenerateResult {
 
 const result = await globalThis.tti.generate({
   text: "一只猫",
-  negativeText: "模糊, 低质量"
+  negativeText: "模糊, 低质量",
+  image: "https://example.com/ref.png" // 可选，参考图
 });
 ```
 

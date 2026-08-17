@@ -7,6 +7,7 @@ import {
   getByPath,
   hexToBase64,
   isHexString,
+  isHttpUrl,
   parseJson,
   pickString,
   replacePlaceholders,
@@ -70,13 +71,33 @@ function buildPlaceholders(
   model: ModelItem,
   prompt: string,
   negativeText: string,
-  accessToken: string
+  accessToken: string,
+  image: string
 ): Record<string, string> {
+  const rawImage = image.trim();
+  const isDataUrl = /^data:/i.test(rawImage);
+  const isUrl = isHttpUrl(rawImage);
+  const imageBase64 =
+    isDataUrl && rawImage.includes(",")
+      ? rawImage.slice(rawImage.indexOf(",") + 1)
+      : isUrl
+        ? ""
+        : rawImage;
+  const imageUrl =
+    isUrl || isDataUrl
+      ? rawImage
+      : imageBase64
+        ? `data:image/png;base64,${imageBase64}`
+        : "";
+
   return {
     prompt,
     negative_prompt: negativeText,
     text: prompt,
     input: prompt,
+    image: rawImage,
+    image_url: imageUrl,
+    image_base64: imageBase64,
     model: model.name,
     voice_id: model.voiceId || "",
     api_key: model.apiKey,
@@ -302,14 +323,15 @@ async function pollTask(
 export async function sendImageRequest(
   prompt: string,
   negativeText = "",
-  modelName = ""
+  modelName = "",
+  image = ""
 ): Promise<string> {
   if (!prompt.trim()) throw new Error("图片描述不能为空");
 
   const model = Config.getModel(modelName);
   const timeoutMs = (model.request.timeout || 300) * 1000;
   const accessToken = await getAccessToken(model, timeoutMs);
-  const placeholders = buildPlaceholders(model, prompt, negativeText, accessToken);
+  const placeholders = buildPlaceholders(model, prompt, negativeText, accessToken, image);
   const url = buildUrl(model, placeholders);
   const headers = buildHeaders(model, placeholders);
   const { body, contentType } = buildBody(model, placeholders);
